@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">PRAC_3</string>
+    <string name="nav_header_title">Práctica 3</string>
+    <string name="nav_header_subtitle">by: @mexboxluis</string>
+
+
+    <string name="menu_home">Ejercicio 1</string>
+    <string name="menu_gallery">Ejercicio 2</string>
+    <string name="menu_slideshow">Ejercicio 3</string>
+
+
+</resources>
