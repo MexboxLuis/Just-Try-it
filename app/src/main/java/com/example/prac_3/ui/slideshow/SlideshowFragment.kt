@@ -1,6 +1,9 @@
 package com.example.prac_3.ui.slideshow
 
+import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -10,15 +13,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.biometric.BiometricPrompt
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.prac_3.databinding.FragmentSlideshowBinding
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import kotlinx.coroutines.*
 
 class SlideshowFragment : Fragment() {
+
+    companion object {
+        private const val REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS = 1
+    }
 
     private var _binding: FragmentSlideshowBinding? = null
     private val binding get() = _binding!!
@@ -35,8 +38,12 @@ class SlideshowFragment : Fragment() {
             val temperature = event.values[0]
             if (success == false){
                 binding.temperatureTextView.visibility = View.GONE
+
             }
-            binding.temperatureTextView.text = "Temperatura: $temperature °C"
+
+                binding.temperatureTextView.text = "Temperatura: $temperature °C"
+
+
         }
     }
 
@@ -51,10 +58,22 @@ class SlideshowFragment : Fragment() {
         sensorManager = requireActivity().getSystemService(Context.SENSOR_SERVICE) as SensorManager
         temperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
 
-        val executor: Executor = context?.let { ContextCompat.getMainExecutor(it) } ?: Executors.newSingleThreadExecutor()
-        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
+        binding.btnAuthenticate.setOnClickListener {
+            val keyguardManager = requireActivity().getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            if (keyguardManager.isDeviceSecure) {
+                val intent = keyguardManager.createConfirmDeviceCredentialIntent(null, null)
+                startActivityForResult(intent, REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS)
+            }
+        }
+
+        return root
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS) {
+            if (resultCode == Activity.RESULT_OK) {
                 binding.btnAuthenticate.setBackgroundColor(Color.GREEN)
                 binding.btnAuthenticate.text = ("Autenticado")
                 binding.viewOverlay.visibility = View.VISIBLE
@@ -69,20 +88,11 @@ class SlideshowFragment : Fragment() {
                     binding.progressBar.visibility = View.GONE
                     binding.temperatureTextView.visibility = View.VISIBLE
                 }
+            } else {
+                binding.btnAuthenticate.setBackgroundColor(Color.RED)
+                binding.btnAuthenticate.text = ("ERROR AL AUTENTICAR :(")
             }
-        })
-
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Autenticación biométrica")
-            .setSubtitle("Confirma tu identidad para continuar")
-            .setNegativeButtonText("Cancelar")
-            .build()
-
-        binding.btnAuthenticate.setOnClickListener {
-            biometricPrompt.authenticate(promptInfo)
         }
-
-        return root
     }
 
     override fun onResume() {
